@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": null,
+  "rewrites": [
+    {"source": "/api/inngest", "destination": "/api/inngest.js"}
+  ],
+  "functions": {
+    "api/inngest.js": {
+      "maxDuration": 300
+    }
+  }
+}
