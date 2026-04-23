@@ -1,5 +1,6 @@
 import {getGivebackThreads, getGivebackStats} from '../../lib/queries.js';
 import {markGivebackAnswered, skipGiveback} from './actions.js';
+import GivebackPromptButton from '../../components/GivebackPromptButton.jsx';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -77,7 +78,8 @@ function GivebackCard({thread}) {
           )}
         </div>
         {!isAnswered && !isSkipped && (
-          <div className="flex flex-col gap-2 shrink-0">
+          <div className="flex flex-col gap-2 shrink-0 w-32">
+            <GivebackPromptButton thread={thread} />
             <form action={markGivebackAnswered}>
               <input type="hidden" name="id" value={thread.id} />
               <button type="submit" className="w-full px-3 py-1.5 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 whitespace-nowrap">

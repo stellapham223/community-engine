@@ -13,6 +13,7 @@ import {
   TOPIC_RELEVANCE_SCORER_SYSTEM,
   COMMENT_GENERATOR_SYSTEM,
   SALESY_DETECTOR_SYSTEM,
+  GIVEBACK_HELPFUL_SYSTEM,
 } from '../services/llmPrompts.js';
 
 // ─────────────────────────────────────────────
@@ -477,6 +478,54 @@ export const communityGivebackToday = {
 };
 
 // ─────────────────────────────────────────────
+// Tool: community_giveback_analyze
+// Fetch giveback thread + return helpful-only system prompt for Claude to draft.
+// NO Joy mention — pure karma play.
+// ─────────────────────────────────────────────
+export const communityGivebackAnalyze = {
+  name: 'community_giveback_analyze',
+  description: 'Get a giveback thread + helpful-only system prompt for Claude to draft a karma reply (NO Joy mention, pure expertise).',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      id: {type: 'integer', description: 'cd_giveback_threads.id'},
+    },
+    required: ['id'],
+  },
+  async handler({id}) {
+    const [thread] = await sql`SELECT * FROM cd_giveback_threads WHERE id = ${id}`;
+    if (!thread) throw new Error(`Giveback thread ${id} not found`);
+
+    // Re-fetch full body + replies if Reddit (RSS only gives excerpt)
+    let detail = null;
+    if (thread.platform === 'reddit') {
+      try {
+        detail = await getRedditThread(thread.external_id);
+      } catch (e) {
+        console.error('[giveback_analyze] reddit fetch:', e.message);
+      }
+    }
+
+    return {
+      thread: {
+        id: thread.id,
+        platform: thread.platform,
+        url: thread.url,
+        title: thread.title,
+        body: thread.body,
+        category: thread.category,
+        difficulty: thread.difficulty,
+        upvotes: thread.upvotes,
+        num_replies: thread.num_replies,
+      },
+      content: detail,
+      instructions: 'Use the system prompt below to draft ONE helpful reply. Do NOT mention Joy Subscriptions. Match the category framing.',
+      helpful_prompt: GIVEBACK_HELPFUL_SYSTEM,
+    };
+  },
+};
+
+// ─────────────────────────────────────────────
 // Tool: community_giveback_mark_answered
 // ─────────────────────────────────────────────
 export const communityGivebackMarkAnswered = {
@@ -540,6 +589,7 @@ export const allTools = [
   communityAcknowledgeMention,
   communityRatio,
   communityGivebackToday,
+  communityGivebackAnalyze,
   communityGivebackMarkAnswered,
   communityRevisitAlerts,
 ];
